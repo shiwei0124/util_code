@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "async_socket_test", "async_socket_test\async_socket_test.vcproj", "{99B59FA2-9A17-4C00-B621-1C9F5F25D0CB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "main_test", "main_test\main_test.vcproj", "{28FF3736-6DC9-4B4E-9F20-5C5A5BCACFF5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{99B59FA2-9A17-4C00-B621-1C9F5F25D0CB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{99B59FA2-9A17-4C00-B621-1C9F5F25D0CB}.Debug|Win32.Build.0 = Debug|Win32
+		{99B59FA2-9A17-4C00-B621-1C9F5F25D0CB}.Release|Win32.ActiveCfg = Release|Win32
+		{99B59FA2-9A17-4C00-B621-1C9F5F25D0CB}.Release|Win32.Build.0 = Release|Win32
+		{28FF3736-6DC9-4B4E-9F20-5C5A5BCACFF5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{28FF3736-6DC9-4B4E-9F20-5C5A5BCACFF5}.Debug|Win32.Build.0 = Debug|Win32
+		{28FF3736-6DC9-4B4E-9F20-5C5A5BCACFF5}.Release|Win32.ActiveCfg = Release|Win32
+		{28FF3736-6DC9-4B4E-9F20-5C5A5BCACFF5}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

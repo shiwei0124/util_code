@@ -1,0 +1,5 @@
+eclipse.preferences.version=1
+encoding//async_socket_test/async_socket_test/base_io_stream.h=UTF-8
+encoding//async_socket_test/async_socket_test/io_loop.h=UTF-8
+encoding//async_socket_test/async_socket_test/session_msg.h=UTF-8
+encoding//async_socket_test/async_socket_test/tcp_client_async.cpp=UTF-8
