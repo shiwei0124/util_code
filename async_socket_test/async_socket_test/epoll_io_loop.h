@@ -1,13 +1,13 @@
 /**	@file epoll_io_loop.h
  *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
- *	@brief CEPOLLIOLoopÀàµÄÍ·ÎÄ¼ş¡£
+ *	@brief CEPOLLIOLoopç±»çš„å¤´æ–‡ä»¶ã€‚
  *
  *	@author		shiwei
  *	@date		2014/03/20
  *
- *	@note ¸ÃÀàÊ¹ÓÃepollµÄLTÄ£Ê½Íê³ÉÍøÂçIOµÄ¶ÁĞ´
- *	@note ÀúÊ·¼ÇÂ¼£º
- *	@note V1.0.0  ´´½¨ÎÄ¼ş
+ *	@note è¯¥ç±»ä½¿ç”¨epollçš„LTæ¨¡å¼å®Œæˆç½‘ç»œIOçš„è¯»å†™
+ *	@note å†å²è®°å½•ï¼š
+ *	@note V1.0.0  åˆ›å»ºæ–‡ä»¶
  */
 #pragma once
 

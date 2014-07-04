@@ -14,7 +14,7 @@ CEpollIOLoop::~CEpollIOLoop(void)
 #if defined(__linux__)
 /**	@fn	void CEpollIOLoop::Start(int nEpollSize)
 *	@brief 
-*	@param[in] nEpollSize Ä¬ÈÏµÄepoll¼àÌısize£¬Ä¬ÈÏÎªEPOLL_SIZE 
+*	@param[in] nEpollSize é»˜è®¤çš„epollç›‘å¬sizeï¼Œé»˜è®¤ä¸ºEPOLL_SIZE 
 *	@return	
 */
 void CEpollIOLoop::Start(int nEpollSize)
@@ -55,7 +55,7 @@ void CEpollIOLoop::Run()
 {
 	struct epoll_event ev;
 	ev.data.fd=m_waker.GetWakeSocket();
-	//ÉèÖÃÒª´¦ÀíµÄÊÂ¼şÀàĞÍ
+	//è®¾ç½®è¦å¤„ç†çš„äº‹ä»¶ç±»å‹
 	ev.events=EPOLLIN;
 	epoll_ctl(m_eid, EPOLL_CTL_ADD, m_waker.GetWakeSocket(), &ev);
 
@@ -88,8 +88,8 @@ void CEpollIOLoop::Run()
 				}
 				else
 				{
-					//µ÷ÊÔµÄÊ±ºò¿ÉÄÜÊı¾İ»¹Ã»¶Á£¬µ«ÊÇ¶ÔÏóÒÑ¾­Ã»ÁË£¬ĞèÒªÇåµô
-					//epollÒ²»áÔÚµ÷ÓÃclose(sock)ºó»á×Ô¼ºÇå³ı¡£
+					//è°ƒè¯•çš„æ—¶å€™å¯èƒ½æ•°æ®è¿˜æ²¡è¯»ï¼Œä½†æ˜¯å¯¹è±¡å·²ç»æ²¡äº†ï¼Œéœ€è¦æ¸…æ‰
+					//epollä¹Ÿä¼šåœ¨è°ƒç”¨close(sock)åä¼šè‡ªå·±æ¸…é™¤ã€‚
 					epoll_ctl(m_eid, EPOLL_CTL_DEL, sock, &events[i]);
 				}
 			}//EPOLLIN
@@ -100,7 +100,7 @@ void CEpollIOLoop::Run()
 				{
 					if (pIOStream->GetSockType() == SOCK_TCP_CLIENT && pIOStream->CheckConnect())
 					{
-						//Á¬½Ó³É¹¦
+						//è¿æ¥æˆåŠŸ
 						pIOStream->OnConnect(HPR_TRUE);
 					}
 					pIOStream->SendBufferAsync();
@@ -117,7 +117,7 @@ void CEpollIOLoop::Run()
 					nCode = getsockopt(pIOStream->GetSocket(), SOL_SOCKET, SO_ERROR, &nError, &nLen);
 					if (nCode < 0 || nError) 
 					{     
-						//Á¬½ÓÊ§°Ü
+						//è¿æ¥å¤±è´¥
 						SOCKET_IO_WARN("socket connect failed, nCode: %d, nError: %d.", nCode, nError);
 						pIOStream->OnConnect(HPR_FALSE);
 					}
@@ -152,7 +152,7 @@ void CEpollIOLoop::Add_Handler( CBaseIOStream* piostream )
 void CEpollIOLoop::Remove_Handler( CBaseIOStream* piostream )
 {
 	m_MapMutex.Lock();
-	//¹Ø±ÕsocketµÄÊ±ºò£¬epoll»á×Ô¶¯´Ó¼¯ºÏÖĞÉ¾³ı¸Ãsocket?
+	//å…³é—­socketçš„æ—¶å€™ï¼Œepollä¼šè‡ªåŠ¨ä»é›†åˆä¸­åˆ é™¤è¯¥socket?
 	struct epoll_event ev;
 	ev.data.fd=piostream->GetSocket();
 	epoll_ctl(m_eid, EPOLL_CTL_DEL, piostream->GetSocket(), &ev);
@@ -162,7 +162,7 @@ void CEpollIOLoop::Remove_Handler( CBaseIOStream* piostream )
 }
 
 /**	@fn	void CEpollIOLoop::Add_WriteEvent(CBaseIOStream* piostream)
-*	@brief ×¢²áĞ´ÊÂ¼ş£¬Èç¹û¶ÔÓÚtcp clientÀ´Ëµ£¬Èç¹ûÊÇÓÃÓÚÅĞ¶ÏconnectÊÇ·ñ³É¹¦£¬ÔòĞèÒª×¢²á´íÎóÊÂ¼ş
+*	@brief æ³¨å†Œå†™äº‹ä»¶ï¼Œå¦‚æœå¯¹äºtcp clientæ¥è¯´ï¼Œå¦‚æœæ˜¯ç”¨äºåˆ¤æ–­connectæ˜¯å¦æˆåŠŸï¼Œåˆ™éœ€è¦æ³¨å†Œé”™è¯¯äº‹ä»¶
 *	@param[in] piostream 
 *	@return	
 */
@@ -180,17 +180,17 @@ void CEpollIOLoop::Add_WriteEvent( CBaseIOStream* piostream )
 		ev.data.fd=piostream->GetSocket();
 		if (piostream->GetSockType() == SOCK_TCP_CLIENT && piostream->CheckConnect())
 		{
-			//ÓÃÓÚÅĞ¶ÏÊÇ·ñconnect³É¹¦
-			//¶ÔÓÚ111(Connection refused)(¼´Á¬½ÓÒ»¸ö²»´æÔÚµÄIP)´íÎó»òÕß110(Connection timed out)
-			//(¼´Á¬½ÓÒ»¸öIP´æÔÚ£¬PORTÎ´¿ª·Å)À´Ëµ,Ã»ÓĞ¶¨ÒåEPOLLERR,
-			//Ò²»á´¥·¢Õâ¸ö´íÎóÊÂ¼ş£¬±£ÏÕÆğ¼û£¬»¹ÊÇÉèÖÃERRÊÂ¼ş
-			//Á¬½Ó³É¹¦ÀûÓÃ¿ÉĞ´¿ÉÒÔÅĞ¶Ï£¬´íÎóÔòÓÃERRÅĞ¶Ï
+			//ç”¨äºåˆ¤æ–­æ˜¯å¦connectæˆåŠŸ
+			//å¯¹äº111(Connection refused)(å³è¿æ¥ä¸€ä¸ªä¸å­˜åœ¨çš„IP)é”™è¯¯æˆ–è€…110(Connection timed out)
+			//(å³è¿æ¥ä¸€ä¸ªIPå­˜åœ¨ï¼ŒPORTæœªå¼€æ”¾)æ¥è¯´,æ²¡æœ‰å®šä¹‰EPOLLERR,
+			//ä¹Ÿä¼šè§¦å‘è¿™ä¸ªé”™è¯¯äº‹ä»¶ï¼Œä¿é™©èµ·è§ï¼Œè¿˜æ˜¯è®¾ç½®ERRäº‹ä»¶
+			//è¿æ¥æˆåŠŸåˆ©ç”¨å¯å†™å¯ä»¥åˆ¤æ–­ï¼Œé”™è¯¯åˆ™ç”¨ERRåˆ¤æ–­
 			ev.events=EPOLLOUT | EPOLLERR;
 			epoll_ctl(m_eid, EPOLL_CTL_MOD, piostream->GetSocket(), &ev);
 		}
 		else
 		{
-			//¿ÉĞ´ÊÂ¼ş
+			//å¯å†™äº‹ä»¶
 			ev.events=EPOLLOUT;
 			epoll_ctl(m_eid, EPOLL_CTL_MOD, piostream->GetSocket(), &ev);
 		}
@@ -201,7 +201,7 @@ void CEpollIOLoop::Add_WriteEvent( CBaseIOStream* piostream )
 }
 
 /**	@fn	void CEpollIOLoop::Remove_WriteEvent(CBaseIOStream* piostream)
-*	@brief É¾³ıĞ´ÊÂ¼ş±ä³É¶ÁÊÂ¼ş
+*	@brief åˆ é™¤å†™äº‹ä»¶å˜æˆè¯»äº‹ä»¶
 *	@param[in] piostream 
 *	@return	
 */

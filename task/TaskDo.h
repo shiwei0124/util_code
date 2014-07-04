@@ -18,7 +18,7 @@ class CBaseTask
 	virtual ~CBaseTask() {};
 };
 
-//ĞèÒªÎö¹¹º¯Êı½øĞĞ³ÉÔ±µÄÊÍ·Å
+//éœ€è¦ææ„å‡½æ•°è¿›è¡Œæˆå‘˜çš„é‡Šæ”¾
 typedef struct st_taskinfo
 {
 	int nTaskType;
@@ -35,10 +35,10 @@ typedef struct st_taskinfo
 	{
 		if (pTaskInfo != NULL)
 		{
-			//¶ÔÓÚvoid*Ö¸Õë¶ÔÏóA¶øÑÔ£¬½øĞĞdelete»áÓĞ²»Í¬µÄĞ§¹û£¬±ÈÈçAÄÚ²¿»¹ÓĞnew£¬ÔòdeleteµÄÊ±ºò²»»áÊÍ·ÅÄÚ´æ
-			//¶ÔÓÚAÄÚ²¿Ã»ÓĞnew,ÔòdeleteµÄÊ±ºò»áÊÍ·ÅÄÚ´æ¡£
-			//ËùÒÔ½¨Òé¾¡Á¿ÊÖ¶¯delete pTaskInfoµÄ¶ÔÏó£¬²¢ÇÒ½«¸ÃÖ¸Õë×ª»»³ÉÕæÊÇ¶ÔÏóµÄÖ¸ÕëÔÚ½øĞĞdelete
-			//½«´Ë´¦µÄpTaskInfo¸Ä³ÉCBaseTaskÀàĞÍµÄ»ùÀàºó£¬½«Task¶¼¼Ì³Ğ¸Ã»ùÀà£¬¿ÉÒÔ±ÜÃâ´ËÀàÎÊÌâ
+			//å¯¹äºvoid*æŒ‡é’ˆå¯¹è±¡Aè€Œè¨€ï¼Œè¿›è¡Œdeleteä¼šæœ‰ä¸åŒçš„æ•ˆæœï¼Œæ¯”å¦‚Aå†…éƒ¨è¿˜æœ‰newï¼Œåˆ™deleteçš„æ—¶å€™ä¸ä¼šé‡Šæ”¾å†…å­˜
+			//å¯¹äºAå†…éƒ¨æ²¡æœ‰new,åˆ™deleteçš„æ—¶å€™ä¼šé‡Šæ”¾å†…å­˜ã€‚
+			//æ‰€ä»¥å»ºè®®å°½é‡æ‰‹åŠ¨delete pTaskInfoçš„å¯¹è±¡ï¼Œå¹¶ä¸”å°†è¯¥æŒ‡é’ˆè½¬æ¢æˆçœŸæ˜¯å¯¹è±¡çš„æŒ‡é’ˆåœ¨è¿›è¡Œdelete
+			//å°†æ­¤å¤„çš„pTaskInfoæ”¹æˆCBaseTaskç±»å‹çš„åŸºç±»åï¼Œå°†Taskéƒ½ç»§æ‰¿è¯¥åŸºç±»ï¼Œå¯ä»¥é¿å…æ­¤ç±»é—®é¢˜
 			delete pTaskInfo;
 			pTaskInfo = NULL;
 		}
@@ -134,9 +134,9 @@ public:
 	HPR_BOOL Task_Stop(void);
 
 	/**	@fn	HPR_BOOL CTaskDo::Task_Add(TASKINFO* pTask)
-	 *	@brief Ìí¼ÓÈÎÎñ¶ÓÁĞ£¬
+	 *	@brief æ·»åŠ ä»»åŠ¡é˜Ÿåˆ—ï¼Œ
 	 *	@param[in] pTask 
-	 *	@return	Ìí¼Ó³É¹¦Ôò·µ»ØHPR_TRUE  Èç¹û¶ÓÁĞ³¬¹ıÁËÉèÖÃµÄ×î´óÖµ£¬Ôò·µ»ØHPR_FALSE
+	 *	@return	æ·»åŠ æˆåŠŸåˆ™è¿”å›HPR_TRUE  å¦‚æœé˜Ÿåˆ—è¶…è¿‡äº†è®¾ç½®çš„æœ€å¤§å€¼ï¼Œåˆ™è¿”å›HPR_FALSE
 	 */
 	HPR_BOOL Task_Add(TASKINFO* pTask);
 
@@ -148,7 +148,7 @@ public:
 
 	virtual HPR_BOOL Task_Do(TASKINFO* OperTask);
 	/**	@fn	HPR_UINT32 CTaskDo::SetMaxQueueSize(HPR_INT32 nMaxSize)
-	 *	@brief ÉèÖÃ´¦Àí¶ÓÁĞ×î´óµÄÊıÄ¿£¬Ä¬ÈÏÎªDEFAULT_QUEUE_MAX_SIZE
+	 *	@brief è®¾ç½®å¤„ç†é˜Ÿåˆ—æœ€å¤§çš„æ•°ç›®ï¼Œé»˜è®¤ä¸ºDEFAULT_QUEUE_MAX_SIZE
 	 *	@param[in] nMaxSize 
 	 *	@return	
 	 */

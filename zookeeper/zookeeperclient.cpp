@@ -65,7 +65,7 @@ void CZooClient::WatcherFn( zhandle_t *zh, int type, int state, const char *path
 			p->DisConnect();
 			p->AsyncConnect();
 		}
-		//²»¹ÜÊÇÁ´½Ó³É¹¦»¹ÊÇÊ§°Ü£¬¶¼½øĞĞ»½ĞÑ²Ù×÷¡£
+		//ä¸ç®¡æ˜¯é“¾æ¥æˆåŠŸè¿˜æ˜¯å¤±è´¥ï¼Œéƒ½è¿›è¡Œå”¤é†’æ“ä½œã€‚
 		p->WakeConnectEvent();
 		p->ResetConnectEvent();
 	} 
@@ -97,7 +97,7 @@ void CZooClient::Fini()
 }
 
 /**	@fn	std::string CZooClient::_BuildHost()
-*	@brief ¹¹ÔìÒ»¸öhost¼¯ºÏµÄ×Ö·û´®
+*	@brief æ„é€ ä¸€ä¸ªhosté›†åˆçš„å­—ç¬¦ä¸²
 *	@return	
 */
 std::string CZooClient::_BuildHost()

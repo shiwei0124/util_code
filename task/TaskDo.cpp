@@ -122,7 +122,7 @@ HPR_VOIDPTR CALLBACK CTaskDo::CommitTask( HPR_VOIDPTR lpParam )
 			}
 			else
 			{   
-				//队列中的任务处理完毕，则重置事件等待下次触发
+				//闃熷垪涓殑浠诲姟澶勭悊瀹屾瘯锛屽垯閲嶇疆浜嬩欢绛夊緟涓嬫瑙﹀彂
 				HPR_ResetEvent(pTaskCtrl->m_hTaskEvent);
 				break;
 			}

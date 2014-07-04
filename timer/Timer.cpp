@@ -71,7 +71,7 @@ int CTimer::StartTimer(int nIndex, pTimerProc pfnTimerProc, unsigned int nMilliS
 	return iRet;
 }
 
-//Í£Ö¹¶¨Ê±Æ÷
+//åœæ­¢å®šæ—¶å™¨
 int CTimer::StopTimer()
 {
 	m_iQuit = 1;
@@ -99,7 +99,7 @@ void* CTimer::ThreadProc(void* pParam)
 		HPR_Sleep(500);
 		//iTime += 500;
 
-		//¸´ÖÆÒ»¸öMAP±í½øÐÐ²Ù×÷£¬¼´Ê¹ÔÚm_pTimerProc()º¯ÊýÖÐÔÙ´Î´´½¨Ò»¸ö¶¨Ê±Æ÷£¬Ò²²»»á³öÏÖËÀËø
+		//å¤åˆ¶ä¸€ä¸ªMAPè¡¨è¿›è¡Œæ“ä½œï¼Œå³ä½¿åœ¨m_pTimerProc()å‡½æ•°ä¸­å†æ¬¡åˆ›å»ºä¸€ä¸ªå®šæ—¶å™¨ï¼Œä¹Ÿä¸ä¼šå‡ºçŽ°æ­»é”
 		pInstance->m_MapMutex.Lock();
 		map<int, pair<unsigned int, unsigned int > > tmp = pInstance->m_MapInterval;
 		map<int, void*> paramtmp = pInstance->m_MapParam;
@@ -109,28 +109,28 @@ void* CTimer::ThreadProc(void* pParam)
 		while (iter != tmp.end())
 		{
 			iter->second.second += 500;
-			//printf("\nÊ±¼ä´òÓ¡£¬%d       %d\n", iter->first, iter->second.second);
+			//printf("\næ—¶é—´æ‰“å°ï¼Œ%d       %d\n", iter->first, iter->second.second);
 			if (iter->second.second >= iter->second.first)
 			{
 				pInstance->m_pTimerProc(iter->first, paramtmp[iter->first]);
-				//´¥·¢¶¨Ê±Æ÷£¬ÔòÔÚÔ­MAP±íÖÐ½«µ±Ç°Ê±¼äÖØÖÃ
+				//è§¦å‘å®šæ—¶å™¨ï¼Œåˆ™åœ¨åŽŸMAPè¡¨ä¸­å°†å½“å‰æ—¶é—´é‡ç½®
 				pInstance->m_MapMutex.Lock();
 				map<int, pair<unsigned int, unsigned int > >::iterator it = pInstance->m_MapInterval.find(iter->first);
 				if (it != pInstance->m_MapInterval.end())
 				{
-					//µ±Ç°Ê±¼äÖØÖÃÎª0
+					//å½“å‰æ—¶é—´é‡ç½®ä¸º0
 					it->second.second = 0;
 				}
 				pInstance->m_MapMutex.Unlock();
 			}
 			else
 			{
-				//Ã»ÓÐ´¥·¢¶¨Ê±Æ÷£¬ÔòÔÚÔ­MAP±íÖÐ½«Ê±¼äµþ¼Ó
+				//æ²¡æœ‰è§¦å‘å®šæ—¶å™¨ï¼Œåˆ™åœ¨åŽŸMAPè¡¨ä¸­å°†æ—¶é—´å åŠ 
 				pInstance->m_MapMutex.Lock();
 				map<int, pair<unsigned int, unsigned int > >::iterator it = pInstance->m_MapInterval.find(iter->first);
 				if (it != pInstance->m_MapInterval.end())
 				{
-					//µ±Ç°Ê±¼ä¼ÌÐøÔö¼Ó
+					//å½“å‰æ—¶é—´ç»§ç»­å¢žåŠ 
 					it->second.second += 500;
 				}
 				pInstance->m_MapMutex.Unlock();

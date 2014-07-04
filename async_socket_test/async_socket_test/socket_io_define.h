@@ -10,7 +10,7 @@
 #define SOCKET_IO_UDP_RECV_FAILED			0x0011	//recv udp failed
 #define SOCKET_IO_UDP_SEND_FAILED			0x0012  //send udp failed
 
-//日志级别宏
+
 HLOG_HANLDE_MODULE(SOCKET_IO)
 
 #define SOCKET_IO_FATAL(fmt, ...) \

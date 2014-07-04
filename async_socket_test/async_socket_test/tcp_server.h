@@ -1,13 +1,13 @@
 /**	@file tcp_server.h
  *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
- *	@brief Ö÷ÒªÓÃÓÚTCP Server¶ËµÄ¶ÔÏó
+ *	@brief ä¸»è¦ç”¨äºTCP Serverç«¯çš„å¯¹è±¡
  *
  *	@author		shiwei
  *	@date		2014/05/05
  *
- *	@note ÕâÀïÌîĞ´±¾ÎÄ¼şµÄÏêÏ¸¹¦ÄÜÃèÊöºÍ×¢½â
- *	@note ÀúÊ·¼ÇÂ¼£º
- *	@note V1.0.0  ´´½¨ÎÄ¼ş
+ *	@note è¿™é‡Œå¡«å†™æœ¬æ–‡ä»¶çš„è¯¦ç»†åŠŸèƒ½æè¿°å’Œæ³¨è§£
+ *	@note å†å²è®°å½•ï¼š
+ *	@note V1.0.0  åˆ›å»ºæ–‡ä»¶
  */
 #pragma once
 #include "socket_io.h"

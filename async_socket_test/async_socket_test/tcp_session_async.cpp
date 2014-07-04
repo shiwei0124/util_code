@@ -56,7 +56,7 @@ void CTCPSessionAsync::OnRecv()
 	}
 	else if (nRet == 0)		
 	{
-		//¶Ô·½¹Ø±Õsocket
+		//å¯¹æ–¹å…³é—­socket
 		DoException(GetSocketID(), SOCKET_IO_TCP_RECV_FAILED);
 		SOCKET_IO_WARN("recv tcp data error, peer closed.");
 	}
@@ -75,7 +75,7 @@ void CTCPSessionAsync::OnRecv()
 		}
 		else
 		{
-			//ÓÃselect/epoll/iocpµÄ·½Ê½Ó¦¸Ã²»»áÓĞÕâ¸öÇé¿ö³öÏÖ
+			//ç”¨select/epoll/iocpçš„æ–¹å¼åº”è¯¥ä¸ä¼šæœ‰è¿™ä¸ªæƒ…å†µå‡ºç°
 			SOCKET_IO_WARN("recv tcp data error, buffer is blocking.");
 		}
 	}
@@ -91,7 +91,7 @@ HPR_INT32 CTCPSessionAsync::SendBufferAsync()
 	m_sendqueuemutex.Lock();
 	if (m_sendqueue.size() == 0)
 	{
-		//´ı·¢ËÍ¶ÓÁĞÖĞÎª¿Õ£¬ÔòÉ¾³ıĞ´ÊÂ¼şµÄ×¢²á,¸Ä³É¶ÁÊÂ¼ş
+		//å¾…å‘é€é˜Ÿåˆ—ä¸­ä¸ºç©ºï¼Œåˆ™åˆ é™¤å†™äº‹ä»¶çš„æ³¨å†Œ,æ”¹æˆè¯»äº‹ä»¶
 		m_pio->Remove_WriteEvent(this);
 		m_sendqueuemutex.Unlock();
 		return nErrorCode;
@@ -128,11 +128,11 @@ HPR_INT32 CTCPSessionAsync::SendBufferAsync()
 	else if (nRet != nRealSize)
 	{
 		HPR_INT32 nSize = 0;
-		//½«Î´³É¹¦µÄÊı¾İÖØĞÂ·ÅÖÃbuffer loopÖĞ£¬´ıÏÂ´Î·¢ËÍ
+		//å°†æœªæˆåŠŸçš„æ•°æ®é‡æ–°æ”¾ç½®buffer loopä¸­ï¼Œå¾…ä¸‹æ¬¡å‘é€
 		pBufferLoop->get_buffer(szSendBuffer, nRet, &nSize);
 		if (nRet != nSize)
 		{
-			//Ò»°ã²»¿ÉÄÜ³öÏÖÕâÖÖÇé¿ö
+			//ä¸€èˆ¬ä¸å¯èƒ½å‡ºç°è¿™ç§æƒ…å†µ
 			SOCKET_IO_ERROR("send tcp data, send size: %d, less than %d, get buffer size wrong.", nRet, nRealSize);
 		}
 		else
@@ -175,7 +175,7 @@ HPR_INT32 CTCPSessionAsync::SendMsgAsync( const char* szBuf, HPR_INT32 nBufSize 
 			m_sendqueuemutex.Lock();
 			m_sendqueue.push(pBufferLoop);
 			m_sendqueuemutex.Unlock();
-			//ÓĞÊı¾İ·ÅÈë´ı·¢ËÍ¶ÓÁĞ£¬Ôò×¢²áÎªĞ´ÊÂ¼ş
+			//æœ‰æ•°æ®æ”¾å…¥å¾…å‘é€é˜Ÿåˆ—ï¼Œåˆ™æ³¨å†Œä¸ºå†™äº‹ä»¶
 			m_pio->Add_WriteEvent(this);
 			SOCKET_IO_WARN("send tcp data, buffer is blocking.")
 		}
@@ -199,7 +199,7 @@ HPR_INT32 CTCPSessionAsync::SendMsgAsync( const char* szBuf, HPR_INT32 nBufSize 
 		m_sendqueuemutex.Lock();
 		m_sendqueue.push(pBufferLoop);
 		m_sendqueuemutex.Unlock();
-		//ÓĞÊı¾İ·ÅÈë´ı·¢ËÍ¶ÓÁĞ£¬Ôò×¢²áÎªĞ´ÊÂ¼ş
+		//æœ‰æ•°æ®æ”¾å…¥å¾…å‘é€é˜Ÿåˆ—ï¼Œåˆ™æ³¨å†Œä¸ºå†™äº‹ä»¶
 		m_pio->Add_WriteEvent(this);
 		SOCKET_IO_WARN("send tcp data, send size: %d, less than %d.", nRet, nBufSize);
 	}
@@ -225,7 +225,7 @@ void CTCPSessionAsync::Stop()
 }
 
 /**	@fn	HPR_BOOL CTCPSessionAsync::CheckWrite()
-*	@brief ÅĞ¶ÏSOCKETÊÇ·ñĞèÒªÉèÖÃ¿ÉĞ´
+*	@brief åˆ¤æ–­SOCKETæ˜¯å¦éœ€è¦è®¾ç½®å¯å†™
 *	@return	
 */
 HPR_BOOL CTCPSessionAsync::CheckWrite()

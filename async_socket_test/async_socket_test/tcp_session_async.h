@@ -1,13 +1,13 @@
 /**	@file tcp_session_async.h
  *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
- *	@brief TCP Server acceptµ½ºóµÄsocket¶ÔÏó£¬·Ç×èÈûÄ£Ê½
+ *	@brief TCP Server acceptåˆ°åçš„socketå¯¹è±¡ï¼Œéé˜»å¡æ¨¡å¼
  *
  *	@author		shiwei
  *	@date		2014/05/05
  *
- *	@note ÕâÀïÌîĞ´±¾ÎÄ¼şµÄÏêÏ¸¹¦ÄÜÃèÊöºÍ×¢½â
- *	@note ÀúÊ·¼ÇÂ¼£º
- *	@note V1.0.0  ´´½¨ÎÄ¼ş
+ *	@note è¿™é‡Œå¡«å†™æœ¬æ–‡ä»¶çš„è¯¦ç»†åŠŸèƒ½æè¿°å’Œæ³¨è§£
+ *	@note å†å²è®°å½•ï¼š
+ *	@note V1.0.0  åˆ›å»ºæ–‡ä»¶
  */
 #pragma once
 #include "socket_io.h"
@@ -52,7 +52,7 @@ public:
 	sigslot::signal1<HPR_UINT32> DoClose;
 private:
 	CBufferLoop m_recvbuffer;
-	queue<CBufferLoop*> m_sendqueue;		//´ı·¢ËÍ¶ÓÁĞ£¬Ö»ÓĞ·Ç×èÈûµÄTCP socket²Å»áÓÃµ½
+	queue<CBufferLoop*> m_sendqueue;		//å¾…å‘é€é˜Ÿåˆ—ï¼Œåªæœ‰éé˜»å¡çš„TCP socketæ‰ä¼šç”¨åˆ°
 	HPR_Mutex m_sendqueuemutex;
 
 };
