@@ -1,9 +1,9 @@
 #ifndef _EVENT_H_   
 #define _EVENT_H_  
-  
+
 #ifdef _MSC_VER  
 #include <Windows.h>  
-#define hik_event_handle HANDLE  
+#define event_handle HANDLE  
 #else  
 #include <pthread.h>  
 typedef struct    
@@ -15,30 +15,24 @@ typedef struct
 }event_t;  
 #define event_handle event_t*  
 #endif  
-  
-//·µ»ØÖµ£ºNULL ³ö´í  
-event_handle event_create(bool manual_reset, bool init_state);  
-  
-//·µ»ØÖµ£º0 µÈµ½ÊÂ¼ş£¬-1³ö´í  
-int event_wait(event_handle hevent);  
-  
-//·µ»ØÖµ£º0 µÈµ½ÊÂ¼ş£¬1 ³¬Ê±£¬-1³ö´í  
-int event_timedwait(event_handle hevent, long milliseconds);  
-  
-//·µ»ØÖµ£º0 ³É¹¦£¬-1³ö´í  
-int event_set(event_handle hevent);  
-  
-//·µ»ØÖµ£º0 ³É¹¦£¬-1³ö´í  
-int event_reset(event_handle hevent);  
-  
-//·µ»ØÖµ£ºÎŞ  
-void event_destroy(event_handle hevent);  
 
 #ifdef __linux  
 #include <sys/time.h>  
 #include <errno.h>  
 #endif  
 #include <iostream>  
+  
+//int event_wait(event_handle hevent);  
+  
+//int event_timedwait(event_handle hevent, long milliseconds);  
+  
+//int event_set(event_handle hevent);  
+  
+//int event_reset(event_handle hevent);  
+  
+//void event_destroy(event_handle hevent);  
+
+//è¿”å›å€¼ï¼šNULL å‡ºé”™  
 event_handle event_create(bool manual_reset, bool init_state)  
 {     
 #ifdef _MSC_VER  
@@ -65,6 +59,8 @@ event_handle event_create(bool manual_reset, bool init_state)
 #endif  
     return hevent;  
 }  
+
+//è¿”å›å€¼ï¼š0 ç­‰åˆ°äº‹ä»¶ï¼Œ-1å‡ºé”™  
 int event_wait(event_handle hevent)  
 {  
 #ifdef _MSC_VER  
@@ -98,6 +94,8 @@ int event_wait(event_handle hevent)
     return 0;  
 #endif  
 }  
+
+//è¿”å›å€¼ï¼š0 ç­‰åˆ°äº‹ä»¶ï¼Œ1 è¶…æ—¶ï¼Œ-1å‡ºé”™  
 int event_timedwait(event_handle hevent, long milliseconds)  
 {  
 #ifdef _MSC_VER  
@@ -155,6 +153,8 @@ int event_timedwait(event_handle hevent, long milliseconds)
     return 0;  
 #endif  
 }  
+
+//è¿”å›å€¼ï¼š0 æˆåŠŸï¼Œ-1å‡ºé”™  
 int event_set(event_handle hevent)  
 {  
 #ifdef _MSC_VER  
@@ -189,11 +189,13 @@ int event_set(event_handle hevent)
   
     return 0;  
 #endif  
-}  
+} 
+
+//è¿”å›å€¼ï¼š0 æˆåŠŸï¼Œ-1å‡ºé”™  
 int event_reset(event_handle hevent)   
 {  
 #ifdef _MSC_VER  
-    //ResetEvent ·µ»Ø·ÇÁã±íÊ¾³É¹¦  
+    //ResetEvent è¿”å›éé›¶è¡¨ç¤ºæˆåŠŸ  
     if (ResetEvent(hevent))  
     {  
         return 0;  
@@ -214,6 +216,8 @@ int event_reset(event_handle hevent)
     return 0;  
 #endif  
 }  
+
+//è¿”å›å€¼ï¼šæ—   
 void event_destroy(event_handle hevent)  
 {  
 #ifdef _MSC_VER  
