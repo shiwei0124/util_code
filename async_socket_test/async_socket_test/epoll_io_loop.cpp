@@ -1,10 +1,10 @@
 #include "epoll_io_loop.h"
-#include "HPR_Select.h"
 #include "socket_io_define.h"
 CEpollIOLoop::CEpollIOLoop(void)
 {
 	m_eid = 0;
 	m_epollszie = EPOLL_SIZE;
+    m_bCloseRequest = FALSE;
 }
 
 CEpollIOLoop::~CEpollIOLoop(void)
@@ -12,20 +12,20 @@ CEpollIOLoop::~CEpollIOLoop(void)
 }
 
 #if defined(__linux__)
-/**	@fn	void CEpollIOLoop::Start(int nEpollSize)
+/**	@fn	void CEpollIOLoop::Start(int32_t nEpollSize)
 *	@brief 
 *	@param[in] nEpollSize 默认的epoll监听size，默认为EPOLL_SIZE 
 *	@return	
 */
-void CEpollIOLoop::Start(int nEpollSize)
+void CEpollIOLoop::Start(int32_t nEpollSize)
 {
-	if (m_threadhandle == HPR_INVALID_THREAD)
+	if (!m_thread)
 	{
 		_SetEpollSize(nEpollSize);
 		m_waker.Start();
 		m_eid = epoll_create(nEpollSize);
-		m_bCloseRequest = HPR_FALSE;
-		m_threadhandle = HPR_Thread_Create(RunThread, this, 0);
+		m_bCloseRequest = FALSE;
+        m_thread.Start(RunThread, this);
 	}
 }
 
@@ -35,13 +35,12 @@ void CEpollIOLoop::Start(int nEpollSize)
 */
 void CEpollIOLoop::Stop()
 {
-	m_bCloseRequest = HPR_TRUE;
+	m_bCloseRequest = TRUE;
 	m_waker.Wake();
-	if (m_threadhandle != HPR_INVALID_THREAD)
+	if (m_thread)
 	{
-		HPR_Thread_Wait(m_threadhandle);
-		m_threadhandle = HPR_INVALID_THREAD;
-		m_MapIOStreamBySocket.clear();
+        m_thread.Wait();
+        m_MapIOStreamBySocket.clear();
 	}
 	m_waker.Stop();
 	close(m_eid);
@@ -59,15 +58,15 @@ void CEpollIOLoop::Run()
 	ev.events=EPOLLIN;
 	epoll_ctl(m_eid, EPOLL_CTL_ADD, m_waker.GetWakeSocket(), &ev);
 
-	while (HPR_TRUE)
+	while (TRUE)
 	{
 		struct epoll_event* events = new epoll_event[_GetEpollSize()];
-		HPR_INT32 nfds = epoll_wait(m_eid, events, _GetEpollSize(), -1);
+		int32_t nfds = epoll_wait(m_eid, events, _GetEpollSize(), -1);
 		if (nfds <= 0)
 			continue;
-		for (HPR_INT32 i = 0; i < nfds; i++)
+		for (int32_t i = 0; i < nfds; i++)
 		{
-			HPR_SOCK_T sock = events[i].data.fd;
+			S_SOCKET sock = events[i].data.fd;
 			if (sock == m_waker.GetWakeSocket())
 			{
 				m_waker.Recv();
@@ -101,7 +100,7 @@ void CEpollIOLoop::Run()
 					if (pIOStream->GetSockType() == SOCK_TCP_CLIENT && pIOStream->CheckConnect())
 					{
 						//连接成功
-						pIOStream->OnConnect(HPR_TRUE);
+						pIOStream->OnConnect(TRUE);
 					}
 					pIOStream->SendBufferAsync();
 				}
@@ -111,7 +110,7 @@ void CEpollIOLoop::Run()
 				CBaseIOStream* pIOStream = _GetHandlerBySock(sock);
 				if (pIOStream->GetSockType() == SOCK_TCP_CLIENT && pIOStream->CheckConnect())
 				{
-					HPR_INT32 nError, nCode;
+					int32_t nError, nCode;
 					socklen_t nLen; 
 					nLen = sizeof(nError);     
 					nCode = getsockopt(pIOStream->GetSocket(), SOL_SOCKET, SO_ERROR, &nError, &nLen);
@@ -119,7 +118,7 @@ void CEpollIOLoop::Run()
 					{     
 						//连接失败
 						SOCKET_IO_WARN("socket connect failed, nCode: %d, nError: %d.", nCode, nError);
-						pIOStream->OnConnect(HPR_FALSE);
+						pIOStream->OnConnect(FALSE);
 					}
 				}
 			}//EPOLLERR

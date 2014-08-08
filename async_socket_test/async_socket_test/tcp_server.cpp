@@ -4,8 +4,9 @@
 CTCPServer::CTCPServer(CIOLoop* pIO) : CBaseIOStream(pIO)
 {
 	SetSockType(SOCK_TCP_SERVER);
-	m_socket = HPR_CreateSocket(AF_INET, SOCK_STREAM, 0);
-	HPR_SetReuseAddr(m_socket, HPR_TRUE);
+	m_socket = S_CreateSocket(AF_INET, SOCK_STREAM, 0);
+    
+	S_SetReuseAddr(m_socket, TRUE);
 }
 
 CTCPServer::~CTCPServer(void)
@@ -19,12 +20,12 @@ CTCPServer::~CTCPServer(void)
 */
 void CTCPServer::OnAccept()
 {
-	HPR_ADDR_T addr;
-	memset(&addr, 0, sizeof(HPR_ADDR_T));
-	HPR_SOCK_T sock = HPR_Accept(GetSocket(), &addr);
-	if (sock != HPR_INVALID_SOCKET)
+    char szIP[32] = {0};
+    int32_t nPort = 0;
+	S_SOCKET sock = S_Accept(GetSocket(), szIP, &nPort);
+	if (sock != S_INVALID_SOCKET)
 	{
-		DoAccept(GetSocketID(), sock, HPR_GetAddrString(&addr), HPR_GetAddrPort(&addr));
+		DoAccept(GetSocketID(), sock, szIP, nPort);
 	}
 }
 
@@ -34,7 +35,7 @@ void CTCPServer::OnAccept()
 */
 void CTCPServer::Listen()
 {
-	HPR_Listen(GetSocket(), 1000);
+	S_Listen(GetSocket(), 1000);
 	m_pio->Add_Handler(this);
 }
 
@@ -44,12 +45,12 @@ void CTCPServer::Listen()
 */
 void CTCPServer::Stop()
 {
-	if (GetSocket() != HPR_INVALID_SOCKET)
+	if (GetSocket() != S_INVALID_SOCKET)
 	{
 		m_pio->Remove_Handler(this);
-		HPR_CloseSocket(GetSocket());
+		S_CloseSocket(GetSocket());
 		DoClose(GetSocketID());
-		m_socket = HPR_INVALID_SOCKET;
+		m_socket = S_INVALID_SOCKET;
 	}
 }
 

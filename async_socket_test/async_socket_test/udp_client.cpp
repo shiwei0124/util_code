@@ -3,7 +3,7 @@
 #include "socket_io_define.h"
 CUDPClient::CUDPClient(CIOLoop* pIO) : CBaseIOStream(pIO)
 {
-	m_socket = HPR_CreateSocket(AF_INET, SOCK_DGRAM, 0);
+	m_socket = S_CreateSocket(AF_INET, SOCK_DGRAM, 0);
 	m_pio->Add_Handler(this);
 }
 
@@ -19,21 +19,21 @@ CUDPClient::~CUDPClient(void)
 */
 void CUDPClient::OnRecv()
 {
-	HPR_ADDR_T addr;
-	memset(&addr, 0, sizeof(HPR_ADDR_T));
 	char szBuf[UDP_RECV_SIZE] = {0};
-	HPR_INT32 nRet = HPR_RecvFrom(GetSocket(), szBuf, UDP_RECV_SIZE, &addr);
+    char szIP[32] = {0};
+    int32_t nPort = 0;
+	int32_t nRet = S_RecvFrom(GetSocket(), szBuf, UDP_RECV_SIZE, szIP, &nPort);
 	if (nRet > 0)
 	{
-		HPR_INT32 nBufSize = nRet;
-		DoRecv(GetSocketID(), szBuf, nBufSize, HPR_GetAddrString(&addr), HPR_GetAddrPort(&addr));
+		int32_t nBufSize = nRet;
+		DoRecv(GetSocketID(), szBuf, nBufSize, szIP, nPort);
 	}
 	else
 	{
 #if (defined(_WIN32) || defined(_WIN64))  
-		HPR_INT32 nErrorCode = ::GetLastError();
-#elif defined(__linux__)
-		HPR_INT32 nErrorCode = errno;
+		int32_t nErrorCode = ::GetLastError();
+#else
+		int32_t nErrorCode = errno;
 #endif
 		{
 			SOCKET_IO_ERROR("recv udp data error, errno: %d.", nErrorCode);
@@ -43,7 +43,7 @@ void CUDPClient::OnRecv()
 	}
 }
 
-/**	@fn	HPR_INT32 CUDPClient::SendMsg(const char* szIP, HPR_INT32 nPort, const char* szMsg, HPR_INT32 nMsgLength)
+/**	@fn	int32_t CUDPClient::SendMsg(const char* szIP, int32_t nPort, const char* szMsg, int32_t nMsgLength)
 *	@brief 
 *	@param[in] szIP 
 *	@param[in] nPort 
@@ -51,23 +51,13 @@ void CUDPClient::OnRecv()
 *	@param[in] nMsgLength 
 *	@return	
 */
-HPR_INT32 CUDPClient::SendMsg( const char* szIP, HPR_INT32 nPort, const char* szMsg, HPR_INT32 nMsgLength )
+int32_t CUDPClient::SendMsg( const char* szIP, int32_t nPort, const char* szMsg, int32_t nMsgLength )
 {
-	HPR_INT32 nRet = 0;
-	HPR_ADDR_T addr;
-	memset(&addr, 0, sizeof(HPR_ADDR_T));
-	HPR_MakeAddrByString(AF_INET, szIP, nPort, &addr);
-	for (HPR_INT32 i = 0; i < 1; i++ )
-	{
-		if (HPR_SendTo(GetSocket(), (HPR_VOIDPTR)szMsg, nMsgLength, &addr) == -1)
-		{
-			//if (::GetLastError() != WSAEWOULDBLOCK)
-			//{
-				nRet = SOCKET_IO_UDP_SEND_FAILED;
-				break;
-			//}
-		}
-	}
+	int32_t nRet = 0;
+    if (S_SendTo(GetSocket(), (void*)szMsg, nMsgLength, szIP, nPort) == -1)
+    {
+        nRet = SOCKET_IO_UDP_SEND_FAILED;
+    }
 	return nRet;
 }
 
@@ -77,12 +67,12 @@ HPR_INT32 CUDPClient::SendMsg( const char* szIP, HPR_INT32 nPort, const char* sz
 */
 void CUDPClient::Stop()
 {
-	if (GetSocket() != HPR_INVALID_SOCKET)
+	if (GetSocket() != S_INVALID_SOCKET)
 	{
 		m_pio->Remove_Handler(this);
-		HPR_CloseSocket(GetSocket());
+		S_CloseSocket(GetSocket());
 		DoClose(GetSocketID());
-		m_socket = HPR_INVALID_SOCKET;
+		m_socket = S_INVALID_SOCKET;
 	}
 }
 

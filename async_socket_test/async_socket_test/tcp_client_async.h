@@ -1,5 +1,5 @@
 /**	@file tcp_client_async.h
- *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
+ *	@note 
  *	@brief 主要用于TCP Client端的对象，非阻塞模式
  *
  *	@author		shiwei
@@ -9,12 +9,16 @@
  *	@note 历史记录：
  *	@note V1.0.0  创建文件
  */
-#pragma once
+#ifndef _TCP_CLIENT_ASYNC_H
+#define _TCP_CLIENT_ASYNC_H
+
 #include "socket_io.h"
 #include "base_io_stream.h"
 #include "buffer_loop.hpp"
 #include <queue>
 #include "sigslot.h"
+#include "base_type.h"
+#include "bast_thread.hpp"
 using namespace std;
 using namespace sigslot;
 
@@ -24,45 +28,47 @@ public:
 	CTCPClientAsync(CIOLoop* pIO);
 	virtual ~CTCPClientAsync(void);
 
-	HPR_INT32 GetSendQueueSize() { 
+	int32_t GetSendQueueSize() {
 		m_sendqueuemutex.Lock();
-		HPR_INT32 nSize = m_sendqueue.size();
+		int32_t nSize = m_sendqueue.size();
 		m_sendqueuemutex.Unlock();
 		return nSize; 
 	}
 
-	virtual void OnConnect(HPR_BOOL bConnected);
+	virtual void OnConnect(BOOL bConnected);
 	virtual void OnRecv();
-	HPR_INT32 ConnectAsync(const char* szIP, HPR_INT32 nPort);
+	int32_t ConnectAsync(const char* szIP, int32_t nPort);
 	
-	HPR_INT32 SendMsgAsync(const char* szBuf, HPR_INT32 nBufSize);
+	int32_t SendMsgAsync(const char* szBuf, int32_t nBufSize);
 	void Stop();
 
-	virtual HPR_INT32 SendBufferAsync();
-	virtual HPR_BOOL CheckWrite();
+	virtual int32_t SendBufferAsync();
+	virtual BOOL CheckWrite();
 	void SetRemoteIP(const char* szIP) { strcpy(m_szRemoteIP, szIP); }
 	virtual const char* GetRemoteIP() const {
 		return m_szRemoteIP;
 	}
-	void SetRemotePort(HPR_INT32 nPort) { m_nRemotePort = nPort; }
-	virtual HPR_INT32 GetRemotePort() {
+	void SetRemotePort(int32_t nPort) { m_nRemotePort = nPort; }
+	virtual int32_t GetRemotePort() {
 		return m_nRemotePort;
 	}
 	
-	/*HPR_UINT32 nsockid*/
-	sigslot::signal1<HPR_UINT32> DoConnect; 
-	/*HPR_UINT32 nsockid, const char* szBuf, HPR_INT32 nBufSize, const char* szIP, HPR_INT32 nPort*/
-	sigslot::signal5<HPR_UINT32, const char*, HPR_INT32, const char*, HPR_INT32 > DoRecv;
-	/*HPR_UINT32 nsockid, HPR_INT32 nErrorCode*/
-	sigslot::signal2<HPR_UINT32, HPR_INT32> DoException;
-	/*HPR_UINT32 nsockid*/
-	sigslot::signal1<HPR_UINT32> DoClose;
+	/*uint32_t nsockid*/
+	sigslot::signal1<uint32_t> DoConnect;
+	/*uint32_t nsockid, const char* szBuf, int32_t nBufSize, const char* szIP, int32_t nPort*/
+	sigslot::signal5<uint32_t, const char*, int32_t, const char*, int32_t > DoRecv;
+	/*uint32_t nsockid, int32_t nErrorCode*/
+	sigslot::signal2<uint32_t, int32_t> DoException;
+	/*uint32_t nsockid*/
+	sigslot::signal1<uint32_t> DoClose;
 private:
 	char m_szRemoteIP[32];
-	HPR_INT32 m_nRemotePort;
+	int32_t m_nRemotePort;
 	CBufferLoop m_recvbuffer;
 
 	queue<CBufferLoop*> m_sendqueue;		//待发送队列，只有非阻塞的TCP socket才会用到
-	HPR_Mutex m_sendqueuemutex;
+	CBaseMutex m_sendqueuemutex;
 
 };
+
+#endif

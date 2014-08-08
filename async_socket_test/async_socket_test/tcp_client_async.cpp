@@ -1,21 +1,13 @@
 #include "tcp_client_async.h"
-#include "HPR_Time.h"
 #include "socket_io_define.h"
 #include "io_loop.h"
-#if (defined(_WIN32) || defined(_WIN64))
-#include <winsock2.h>
-#pragma comment(lib,"ws2_32.lib")
-#elif defined(__linux__)
-#include <sys/types.h>
-#include <sys/socket.h>
-#endif
 
 CTCPClientAsync::CTCPClientAsync(CIOLoop* pIO) : CBaseIOStream(pIO)
 {
-	m_socket = HPR_CreateSocket(AF_INET, SOCK_STREAM, 0);
+	m_socket = S_CreateSocket(AF_INET, SOCK_STREAM, 0);
 	SetSockType(SOCK_TCP_CLIENT);
-	HPR_SetNonBlock(m_socket, HPR_TRUE);
-	SetCheckConnect(HPR_TRUE);
+	S_SetNoBlock(m_socket, TRUE);
+	SetCheckConnect(TRUE);
 }
 
 CTCPClientAsync::~CTCPClientAsync(void)
@@ -30,33 +22,21 @@ CTCPClientAsync::~CTCPClientAsync(void)
 *	@param[in] nPort 
 *	@return	返回值为0
 */
-int CTCPClientAsync::ConnectAsync( const char* szIP, int nPort )
+int32_t CTCPClientAsync::ConnectAsync( const char* szIP, int nPort )
 {
 	SetRemoteIP(szIP);
 	SetRemotePort(nPort);
-	HPR_ADDR_T addr;
-	memset(&addr, 0, sizeof(HPR_ADDR_T));
-	HPR_MakeAddrByString(AF_INET, szIP, nPort, &addr);
-
-#if (defined(_WIN32) || defined(_WIN64))  
-	//貌似这种做法对select没有用
-	//HPR_INT32 timeout = 5000;
-	//HPR_INT32 len = sizeof(timeout); 
-	//setsockopt(GetSocket(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, len); 
-#elif defined(__linux__)
-	//貌似这个做法也没有效果
-	struct timeval timeout = {10, 0};   
-	socklen_t len = sizeof(timeout); 
-	setsockopt(GetSocket(), SOL_SOCKET, SO_SNDTIMEO, &timeout, len); 
-#endif
-
-	if (HPR_ConnectWithTimeOut(GetSocket(), &addr) != 0)
+    //windows:这种做法对select没有用
+    //linux:这个做法也没有效果
+    S_SetSendTimeOut(GetSocket(), 10);
+    
+	if (S_Connect(GetSocket(), szIP, nPort) != 0)
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		HPR_INT32 nError = ::GetLastError();
+		int32_t nError = ::GetLastError();
 		if (nError != WSAEWOULDBLOCK)
-#elif defined(__linux__)
-		int nError = errno;
+#else
+		int32_t nError = errno;
 		if (nError != EINPROGRESS)
 #endif
 		{
@@ -72,7 +52,7 @@ int CTCPClientAsync::ConnectAsync( const char* szIP, int nPort )
 	else
 	{
 		//连接成功，一般连接的是本地端口可能会立即成功
-		OnConnect(HPR_TRUE);
+		OnConnect(TRUE);
 	}
 
 	//对于tcp client来说，在此处在加入io中
@@ -83,13 +63,13 @@ int CTCPClientAsync::ConnectAsync( const char* szIP, int nPort )
 	return 0;
 }
 
-/**	@fn	HPR_INT32 CTCPClientAsync::SendBufferAsync()
+/**	@fn	int32_t CTCPClientAsync::SendBufferAsync()
 *	@brief 将待发送队列中的数据发送出去
 *	@return	
 */
-int CTCPClientAsync::SendBufferAsync()
+int32_t CTCPClientAsync::SendBufferAsync()
 {
-	int nErrorCode = 0;
+	int32_t nErrorCode = 0;
 	m_sendqueuemutex.Lock();
 	if (m_sendqueue.size() == 0)
 	{
@@ -101,16 +81,16 @@ int CTCPClientAsync::SendBufferAsync()
 	CBufferLoop* pBufferLoop = m_sendqueue.front();
 	m_sendqueuemutex.Unlock();
 	char* szSendBuffer = new char[pBufferLoop->get_used_size()];
-	HPR_INT32 nRealSize = 0;
+	int32_t nRealSize = 0;
 	pBufferLoop->get_buffer_tmp(szSendBuffer, pBufferLoop->get_used_size(), &nRealSize);
-	HPR_INT32 nRet = HPR_Send(GetSocket(), (HPR_VOIDPTR)szSendBuffer, nRealSize);
+	int32_t nRet = S_Send(GetSocket(), (void*)szSendBuffer, nRealSize);
 	if ( nRet < 0)
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		int nError = ::GetLastError();
+		int32_t nError = ::GetLastError();
 		if (WSAEWOULDBLOCK == nError)
-#elif defined(__linux__)
-		int nError = errno;
+#else
+		int32_t nError = errno;
 		if (EAGAIN == nError)
 #endif
 		{
@@ -130,7 +110,7 @@ int CTCPClientAsync::SendBufferAsync()
 	else if (nRet != nRealSize)
 	{
 		//将未成功的数据重新放置buffer loop中，待下次发送
-		int nSize = 0;
+		int32_t nSize = 0;
 		pBufferLoop->get_buffer(szSendBuffer, nRet, &nSize);
 		if (nRet != nSize)
 		{
@@ -151,23 +131,23 @@ int CTCPClientAsync::SendBufferAsync()
 	return nErrorCode;
 }
 
-/**	@fn	HPR_INT32 CTCPClientAsync::SendMsgAsync(const char* szBuf, HPR_INT32 nBufSize)
+/**	@fn	HPR_INT32 CTCPClientAsync::SendMsgAsync(const char* szBuf, int32_t nBufSize)
 *	@brief 
 *	@param[in] szBuf 
 *	@param[in] nBufSize 
 *	@return	
 */
-int CTCPClientAsync::SendMsgAsync(const char* szBuf, int nBufSize )
+int32_t CTCPClientAsync::SendMsgAsync(const char* szBuf, int32_t nBufSize )
 {
-	int nErrorCode = 0;
-	int nRet = HPR_Send(GetSocket(), (HPR_VOIDPTR)szBuf, nBufSize);
+	int32_t nErrorCode = 0;
+	int32_t nRet = S_Send(GetSocket(), (void*)szBuf, nBufSize);
 	if ( nRet < 0)
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		int nError = ::GetLastError();
+		int32_t nError = ::GetLastError();
 		if (WSAEWOULDBLOCK == nError)
-#elif defined(__linux__)
-		HPR_INT32 nError = errno;
+#else
+		int32_t nError = errno;
 		if (EAGAIN == nError)
 #endif
 		{
@@ -195,7 +175,7 @@ int CTCPClientAsync::SendMsgAsync(const char* szBuf, int nBufSize )
 	}
 	else if (nRet != nBufSize)
 	{
-		HPR_INT32 nRest = nBufSize - nRet; 
+		int32_t nRest = nBufSize - nRet;
 		CBufferLoop* pBufferLoop = new CBufferLoop();
 		pBufferLoop->create_buffer(nRest);
 		pBufferLoop->append_buffer(szBuf + nRet, nRest);
@@ -215,31 +195,30 @@ int CTCPClientAsync::SendMsgAsync(const char* szBuf, int nBufSize )
 */
 void CTCPClientAsync::Stop()
 {
-	if (GetSocket() != HPR_INVALID_SOCKET)
+	if (GetSocket() != S_INVALID_SOCKET)
 	{
 		m_pio->Remove_Handler(this);
-		HPR_INT32 nStart = HPR_GetTimeTick();
-		HPR_CloseSocket(GetSocket());
-		HPR_INT32 nStop = HPR_GetTimeTick();
-		SOCKET_IO_INFO("close socket, sock %d, real sock: %d, time: %d.", m_sock_id, m_socket, nStop - nStart);
+		S_CloseSocket(GetSocket());
+		SOCKET_IO_INFO("close socket, sock %d, real sock: %d.", GetSocketID(), GetSocket());
 		DoClose(GetSocketID());
-		m_socket = HPR_INVALID_SOCKET;
+		m_socket = S_INVALID_SOCKET;
 	}
 }
 
-/**	@fn	void CTCPClientAsync::OnConnect(HPR_BOOL bConnected)
+/**	@fn	void CTCPClientAsync::OnConnect(BOOL bConnected)
 *	@brief 
 *	@return	
 */
-void CTCPClientAsync::OnConnect(HPR_BOOL bConnected)
+void CTCPClientAsync::OnConnect(BOOL bConnected)
 {
 	//无论是否连接成功，都认为已经判断结束
-	SetCheckConnect(HPR_FALSE);
+	SetCheckConnect(FALSE);
 	//连接完毕，则删除写/错误事件的注册,改成读事件
 	m_pio->Remove_WriteEvent(this);
-	if (HPR_TRUE == bConnected)
+	if (TRUE == bConnected)
 	{
-		SOCKET_IO_INFO("socket connect successed, remote ip: %s, port: %d.", GetRemoteIP(), GetRemotePort());
+		SOCKET_IO_INFO("socket connect successed, remote ip: %s, port: %d.", GetRemoteIP(),
+                       GetRemotePort());
 		DoConnect(GetSocketID());
 	}
 	else
@@ -256,14 +235,14 @@ void CTCPClientAsync::OnConnect(HPR_BOOL bConnected)
 void CTCPClientAsync::OnRecv()
 {
 	char szBuf[TCP_RECV_SIZE] = {0};
-	HPR_INT32 nRet = HPR_Recv(GetSocket(), szBuf, TCP_RECV_SIZE);
+	int32_t nRet = S_Recv(GetSocket(), szBuf, TCP_RECV_SIZE);
 	if (nRet > 0)
 	{
-		HPR_INT32 nBufSize = nRet;
-		HPR_ADDR_T addr;
-		memset(&addr, 0, sizeof(HPR_ADDR_T));
-		HPR_GetAddrBySockFd(GetSocket(), NULL, &addr);
-		DoRecv(GetSocketID(), szBuf, nBufSize, HPR_GetAddrString(&addr), HPR_GetAddrPort(&addr));
+		int32_t nBufSize = nRet;
+        char szIP[32] = {0};
+        int32_t nPort = 0;
+        S_GetPeerName(GetSocket(), szIP, &nPort);
+		DoRecv(GetSocketID(), szBuf, nBufSize, szIP, nPort);
 	}
 	else if (nRet == 0)		
 	{
@@ -274,10 +253,10 @@ void CTCPClientAsync::OnRecv()
 	else
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		HPR_INT32 nErrorCode = ::GetLastError();
+		int32_t nErrorCode = ::GetLastError();
 		if (nErrorCode != WSAEWOULDBLOCK)
-#elif defined(__linux__)
-		HPR_INT32 nErrorCode = errno;
+#else
+		int32_t nErrorCode = errno;
 		if (nErrorCode != EAGAIN)
 #endif
 		{
@@ -292,11 +271,11 @@ void CTCPClientAsync::OnRecv()
 	}
 }
 
-/**	@fn	HPR_BOOL CTCPClientAsync::CheckWrite()
+/**	@fn	BOOL CTCPClientAsync::CheckWrite()
 *	@brief 判断SOCKET是否需要设置可写
 *	@return	
 */
-HPR_BOOL CTCPClientAsync::CheckWrite()
+BOOL CTCPClientAsync::CheckWrite()
 {
 	if (GetSendQueueSize() != 0)
 	{

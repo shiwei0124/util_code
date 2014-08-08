@@ -1,5 +1,4 @@
 #include "io_loop.h"
-#include "HPR_Select.h"
 #include "socket_io_define.h"
 #if defined(__linux__)
 #include <sys/types.h>
@@ -8,8 +7,7 @@
 
 CIOLoop::CIOLoop(void)
 {
-	m_bCloseRequest = HPR_FALSE;
-	m_threadhandle = HPR_INVALID_THREAD;
+	m_bCloseRequest = FALSE;
 }
 
 CIOLoop::~CIOLoop(void)
@@ -22,11 +20,11 @@ CIOLoop::~CIOLoop(void)
 */
 void CIOLoop::Start()
 {
-	if (m_threadhandle == HPR_INVALID_THREAD)
+	if (!m_thread)
 	{
 		m_waker.Start();
-		m_bCloseRequest = HPR_FALSE;
-		m_threadhandle = HPR_Thread_Create(RunThread, this, 0);
+		m_bCloseRequest = FALSE;
+        m_thread.Start(RunThread, this);
 	}
 }
 
@@ -36,12 +34,11 @@ void CIOLoop::Start()
 */
 void CIOLoop::Stop()
 {
-	m_bCloseRequest = HPR_TRUE;
+	m_bCloseRequest = TRUE;
 	m_waker.Wake();
-	if (m_threadhandle != HPR_INVALID_THREAD)
+	if (m_thread)
 	{
-		HPR_Thread_Wait(m_threadhandle);
-		m_threadhandle = HPR_INVALID_THREAD;
+        m_thread.Wait();
 		m_MapIOStreamBySocket.clear();
 	}
 	m_waker.Stop();
@@ -54,7 +51,7 @@ void CIOLoop::Stop()
 void CIOLoop::Run()
 {
 	fd_set fd_read, fd_write, fd_error;
-	while (m_bCloseRequest == HPR_FALSE)
+	while (m_bCloseRequest == FALSE)
 	{
 		int nMaxfd = 0;
 		FD_ZERO(&fd_read);
@@ -64,20 +61,20 @@ void CIOLoop::Run()
 		if(m_waker.GetWakeSocket() > nMaxfd) 
 			nMaxfd = m_waker.GetWakeSocket();
 		m_MapMutex.Lock();
-		map<HPR_SOCK_T, CBaseIOStream*> mapTmp = m_MapIOStreamBySocket;
+		map<S_SOCKET, CBaseIOStream*> mapTmp = m_MapIOStreamBySocket;
 		m_MapMutex.Unlock();
-		map<HPR_SOCK_T, CBaseIOStream*>::iterator it = mapTmp.begin();
+		map<S_SOCKET, CBaseIOStream*>::iterator it = mapTmp.begin();
 		for (; it != mapTmp.end(); it++)
 		{
 			CBaseIOStream* pIOStream = it->second;
-			if (pIOStream->CheckConnect() == HPR_FALSE)
+			if (pIOStream->CheckConnect() == FALSE)
 			{
 				//如果是要检查TCP CLIENT是否连接，则不设置可读
 				FD_SET(it->first, &fd_read);
 				if(it->first > nMaxfd) 
 					nMaxfd = it->first;
 			}
-			if (pIOStream->CheckWrite() == HPR_TRUE)
+			if (pIOStream->CheckWrite() == TRUE)
 			{
 				//设置可写
 				FD_SET(it->first, &fd_write);
@@ -90,19 +87,19 @@ void CIOLoop::Run()
 		timeval tv;
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
-		int nRet = HPR_Select(nMaxfd + 1, &fd_read, &fd_write, &fd_error, NULL);
+		int nRet = select(nMaxfd + 1, &fd_read, &fd_write, &fd_error, NULL);
 		if (nRet > 0)
 		{
-			if (HPR_FdIsSet(m_waker.GetWakeSocket(), &fd_read))
+			if (FD_ISSET(m_waker.GetWakeSocket(), &fd_read))
 			{
 				//stop
 				m_waker.Recv();
 			}
-			map<HPR_SOCK_T, CBaseIOStream*>::iterator it1 = mapTmp.begin();
+			map<S_SOCKET, CBaseIOStream*>::iterator it1 = mapTmp.begin();
 			for (; it1 != mapTmp.end(); it1++)
 			{
 				//read
-				if (HPR_FdIsSet(it1->first, &fd_read))
+				if (FD_ISSET(it1->first, &fd_read))
 				{
 					CBaseIOStream* pIOStream = _GetHandlerBySock(it1->first);
 					if (pIOStream != NULL)
@@ -118,7 +115,7 @@ void CIOLoop::Run()
 					}
 				}//read
 				//write
-				if (HPR_FdIsSet(it1->first, &fd_write))
+				if (FD_ISSET(it1->first, &fd_write))
 				{
 					CBaseIOStream* pIOStream = _GetHandlerBySock(it1->first);
 					if (pIOStream != NULL)	
@@ -126,25 +123,27 @@ void CIOLoop::Run()
 						if (pIOStream->GetSockType() == SOCK_TCP_CLIENT && pIOStream->CheckConnect())
 						{
 #if (defined(_WIN32) || defined(_WIN64))
-							pIOStream->OnConnect(HPR_TRUE);
-#elif defined(__linux__)
+							pIOStream->OnConnect(TRUE);
+#elif defined(__linux__) //mac???
 							//这个是unix的处理方式，经测试linux也适用
-							int nError, nCode;
+							int32_t nError, nCode;
 							socklen_t nLen; 
 							nLen = sizeof(nError);     
-							nCode = getsockopt(pIOStream->GetSocket(), SOL_SOCKET, SO_ERROR, &nError, &nLen);
+							nCode = getsockopt(pIOStream->GetSocket(), SOL_SOCKET, SO_ERROR, &nError,
+                                               &nLen);
 							if (nCode < 0 || nError) 
 							{     
 								//连接失败
 								//linux的超时失败是也是根据这个可以判断
-								SOCKET_IO_WARN("socket connect failed, nCode: %d, nError: %d.", nCode, nError);
-								pIOStream->OnConnect(HPR_FALSE);
+								SOCKET_IO_WARN("socket connect failed, nCode: %d, nError: %d.", nCode,
+                                               nError);
+								pIOStream->OnConnect(FALSE);
 							}
 							else
 							{
 								//连接成功
-								//SOCKET_IO_WARN("socket connect successed, nCode: %d, nError: %d.", nCode, nError);
-								pIOStream->OnConnect(HPR_TRUE);
+								SOCKET_IO_WARN("socket connect successed, nCode: %d, nError: %d.", nCode, nError);
+								pIOStream->OnConnect(TRUE);
 							}
 #endif
 						}
@@ -152,7 +151,7 @@ void CIOLoop::Run()
 					}
 				}//wirte
 				//error
-				if (HPR_FdIsSet(it1->first, &fd_error))
+				if (FD_ISSET(it1->first, &fd_error))
 				{
 					CBaseIOStream* pIOStream = _GetHandlerBySock(it1->first);
 					if (pIOStream != NULL)
@@ -160,14 +159,15 @@ void CIOLoop::Run()
 						//windows的超时判断是利用err_fds来判断
 						//对于不存在的IP(即linux会报111错误),或者IP存在，端口不存在(即linux会报110错误)
 						//都是超时错误
-						if (pIOStream->CheckConnect() == HPR_TRUE)
+						if (pIOStream->CheckConnect() == TRUE)
 						{
-							SOCKET_IO_WARN("socket connect time out, remote ip: %s, port: %d.", pIOStream->GetRemoteIP(), pIOStream->GetRemotePort());
-							pIOStream->OnConnect(HPR_FALSE);
+							SOCKET_IO_WARN("socket connect time out, remote ip: %s, port: %d.",
+                                           pIOStream->GetRemoteIP(), pIOStream->GetRemotePort());
+							pIOStream->OnConnect(FALSE);
 						}
 						else
 						{
-							SOCKET_IO_WARN("err_fds, %d.", (HPR_INT32)pIOStream->GetSockType());
+							SOCKET_IO_WARN("err_fds, %d.", (int32_t)pIOStream->GetSockType());
 						}
 					}
 				}//error
@@ -198,7 +198,7 @@ void CIOLoop::Run()
 	}
 }
 
-/**	@fn	HPR_VOIDPTR __stdcall CIOLoop::RunThread(HPR_VOIDPTR ptr)
+/**	@fn	void* CIOLoop::RunThread(void* ptr)
 *	@brief 
 *	@param[in] ptr 
 *	@return	
@@ -236,15 +236,15 @@ void CIOLoop::Remove_Handler( CBaseIOStream* piostream )
 	m_MapMutex.Unlock();
 }
 
-/**	@fn	CBaseIOStream* CIOLoop::_GetHandlerBySock(HPR_SOCK_T sock)
+/**	@fn	CBaseIOStream* CIOLoop::_GetHandlerBySock(S_SOCKET sock)
 *	@brief 
 *	@param[in] sock 
 *	@return	
 */
-CBaseIOStream* CIOLoop::_GetHandlerBySock( HPR_SOCK_T sock )
+CBaseIOStream* CIOLoop::_GetHandlerBySock( S_SOCKET sock )
 {
 	CBaseIOStream* pIOStream = NULL;
-	map<HPR_SOCK_T, CBaseIOStream*>::iterator it = m_MapIOStreamBySocket.find(sock);
+	map<S_SOCKET, CBaseIOStream*>::iterator it = m_MapIOStreamBySocket.find(sock);
 	if (it != m_MapIOStreamBySocket.end())
 	{
 		pIOStream = it->second;

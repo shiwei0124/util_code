@@ -1,5 +1,5 @@
 /**	@file udp_client.h
- *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
+ *	@note  
  *	@brief 主要用于UDP Client/Server端的对象
  *
  *	@author		shiwei
@@ -9,13 +9,12 @@
  *	@note 历史记录：
  *	@note V1.0.0  创建文件
  */
-#pragma once
+#ifndef _UDP_CLIENT_H
+#define _UDP_CLIENT_H
+
 #include "socket_io.h"
-#include "HPR_Hpr.h"
-#include "HPR_Mutex.h"
 #include "base_io_stream.h"
 #include <map>
-#include <string>
 #include "sigslot.h"
 using namespace std;
 using namespace sigslot;
@@ -28,18 +27,19 @@ public:
 	virtual ~CUDPClient(void);
 
 	void OnRecv();
-	HPR_INT32 SendMsg(const char* szIP, HPR_INT32 nPort, const char* szMsg, HPR_INT32 nMsgLength);
+	int32_t SendMsg(const char* szIP, int32_t nPort, const char* szMsg, int32_t nMsgLength);
 	void Stop();
 
-	/*HPR_UINT32 nsockid, const char* szBuf, HPR_INT32 nBufSize, const char* szIP, HPR_INT32 nPort*/
-	sigslot::signal5<HPR_UINT32, const char*, HPR_INT32, const char*, HPR_INT32 > DoRecv;
-	/*HPR_UINT32 nsockid, HPR_INT32 nErrorCode*/
-	sigslot::signal2<HPR_UINT32, HPR_INT32> DoException;
-	/*HPR_UINT32 nsockid*/
-	sigslot::signal1<HPR_UINT32> DoClose;
+	/*uint32_t nsockid, const char* szBuf, int32_t nBufSize, const char* szIP, int32_t nPort*/
+	sigslot::signal5<uint32_t, const char*, int32_t, const char*, int32_t > DoRecv;
+	/*uint32_t nsockid, int32_t nErrorCode*/
+	sigslot::signal2<uint32_t, int32_t> DoException;
+	/*uint32_t nsockid*/
+	sigslot::signal1<uint32_t> DoClose;
 /* function */
 private:
 
 /* property */
 private:
 };
+#endif

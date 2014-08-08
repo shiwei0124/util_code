@@ -1,20 +1,20 @@
 #include "tcp_session_async.h"
-#include "hpr/HPR_Time.h"
 #include "io_loop.h"
 #include "socket_io_define.h"
+
 CTCPSessionAsync::CTCPSessionAsync(CIOLoop* pIO) : CBaseIOStream(pIO)
 {
-	m_socket = HPR_INVALID_SOCKET;
+	m_socket = S_INVALID_SOCKET;
 	SetSockType(SOCK_TCP_SESSION);
 }
 
-/**	@fn	 CTCPSessionAsync::CTCPSessionAsync(CIOLoop* pIO, HPR_SOCK_T nSock)
+/**	@fn	 CTCPSessionAsync::CTCPSessionAsync(CIOLoop* pIO, S_SOCKET nSock)
 *	@brief 
 *	@param[in] pIO 
 *	@param[in] nSock 
 *	@return	
 */
-CTCPSessionAsync::CTCPSessionAsync( CIOLoop* pIO, HPR_SOCK_T nSock ) : CBaseIOStream(pIO)
+CTCPSessionAsync::CTCPSessionAsync( CIOLoop* pIO, S_SOCKET nSock ) : CBaseIOStream(pIO)
 {
 	SetSockType(SOCK_TCP_SESSION);
 	SetSocket(nSock);
@@ -25,15 +25,15 @@ CTCPSessionAsync::~CTCPSessionAsync(void)
 	Stop();
 }
 
-/**	@fn	void CTCPSessionAsync::SetSocket(HPR_SOCK_T nSock)
+/**	@fn	void CTCPSessionAsync::SetSocket(S_SOCKET nSock)
 *	@brief 
 *	@param[in] nSock 
 *	@return	
 */
-void CTCPSessionAsync::SetSocket( HPR_SOCK_T nSock )
+void CTCPSessionAsync::SetSocket( S_SOCKET nSock )
 {
 	m_socket = nSock;
-	HPR_SetNonBlock(m_socket, HPR_TRUE);
+    S_SetNoBlock(GetSocket(), TRUE);
 	m_pio->Add_Handler(this);
 }
 
@@ -45,14 +45,14 @@ void CTCPSessionAsync::SetSocket( HPR_SOCK_T nSock )
 void CTCPSessionAsync::OnRecv()
 {
 	char szBuf[TCP_RECV_SIZE] = {0};
-	HPR_INT32 nRet = HPR_Recv(GetSocket(), szBuf, TCP_RECV_SIZE);
+	int32_t nRet = S_Recv(GetSocket(), szBuf, TCP_RECV_SIZE);
 	if (nRet > 0)
 	{
-		HPR_INT32 nBufSize = nRet;
-		HPR_ADDR_T addr;
-		memset(&addr, 0, sizeof(HPR_ADDR_T));
-		HPR_GetAddrBySockFd(GetSocket(), NULL, &addr);
-		DoRecv(GetSocketID(), szBuf, nBufSize, HPR_GetAddrString(&addr), HPR_GetAddrPort(&addr));
+		int32_t nBufSize = nRet;
+        char szIP[32] = {0};
+        int32_t nPort = 0;
+        S_GetPeerName(GetSocket(), szIP, &nPort);
+		DoRecv(GetSocketID(), szBuf, nBufSize, szIP, nPort);
 	}
 	else if (nRet == 0)		
 	{
@@ -63,10 +63,10 @@ void CTCPSessionAsync::OnRecv()
 	else
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		HPR_INT32 nErrorCode = ::GetLastError();
+		int32_t nErrorCode = ::GetLastError();
 		if (nErrorCode != WSAEWOULDBLOCK)
-#elif defined(__linux__)
-		HPR_INT32 nErrorCode = errno;
+#else
+		int32_t nErrorCode = errno;
 		if (nErrorCode != EAGAIN)
 #endif
 		{
@@ -81,13 +81,13 @@ void CTCPSessionAsync::OnRecv()
 	}
 }
 
-/**	@fn	HPR_INT32 CTCPSessionAsync::SendBufferAsync()
+/**	@fn	int32_t CTCPSessionAsync::SendBufferAsync()
 *	@brief 
 *	@return	
 */
-HPR_INT32 CTCPSessionAsync::SendBufferAsync()
+int32_t CTCPSessionAsync::SendBufferAsync()
 {
-	HPR_INT32 nErrorCode = 0;
+	int32_t nErrorCode = 0;
 	m_sendqueuemutex.Lock();
 	if (m_sendqueue.size() == 0)
 	{
@@ -99,16 +99,16 @@ HPR_INT32 CTCPSessionAsync::SendBufferAsync()
 	CBufferLoop* pBufferLoop = m_sendqueue.front();
 	m_sendqueuemutex.Unlock();
 	char* szSendBuffer = new char[pBufferLoop->get_used_size()];
-	HPR_INT32 nRealSize = 0;
+	int32_t nRealSize = 0;
 	pBufferLoop->get_buffer_tmp(szSendBuffer, pBufferLoop->get_used_size(), &nRealSize);
-	HPR_INT32 nRet = HPR_Send(GetSocket(), (HPR_VOIDPTR)szSendBuffer, nRealSize);
+	int32_t nRet = S_Send(GetSocket(), (void*)szSendBuffer, nRealSize);
 	if ( nRet < 0)
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		HPR_INT32 nError = ::GetLastError();
+		int32_t nError = ::GetLastError();
 		if (WSAEWOULDBLOCK == nError)
-#elif defined(__linux__)
-		HPR_INT32 nError = errno;
+#else
+		int32_t nError = errno;
 		if (EAGAIN == nError)
 #endif
 		{
@@ -127,7 +127,7 @@ HPR_INT32 CTCPSessionAsync::SendBufferAsync()
 	}
 	else if (nRet != nRealSize)
 	{
-		HPR_INT32 nSize = 0;
+		int32_t nSize = 0;
 		//将未成功的数据重新放置buffer loop中，待下次发送
 		pBufferLoop->get_buffer(szSendBuffer, nRet, &nSize);
 		if (nRet != nSize)
@@ -149,23 +149,23 @@ HPR_INT32 CTCPSessionAsync::SendBufferAsync()
 	return nErrorCode;
 }
 
-/**	@fn	HPR_INT32 CTCPSessionAsync::SendMsgAsync(const char* szBuf, HPR_INT32 nBufSize)
+/**	@fn	int32_t CTCPSessionAsync::SendMsgAsync(const char* szBuf, int32_t nBufSize)
 *	@brief 
 *	@param[in] szBuf 
 *	@param[in] nBufSize 
 *	@return	
 */
-HPR_INT32 CTCPSessionAsync::SendMsgAsync( const char* szBuf, HPR_INT32 nBufSize )
+int32_t CTCPSessionAsync::SendMsgAsync( const char* szBuf, int32_t nBufSize )
 {
-	HPR_INT32 nErrorCode = 0;
-	HPR_INT32 nRet = HPR_Send(GetSocket(), (HPR_VOIDPTR)szBuf, nBufSize);
+	int32_t nErrorCode = 0;
+	int32_t nRet = S_Send(GetSocket(), (void*)szBuf, nBufSize);
 	if ( nRet < 0)
 	{
 #if (defined(_WIN32) || defined(_WIN64))
-		HPR_INT32 nError = ::GetLastError();
+		int32_t nError = ::GetLastError();
 		if (WSAEWOULDBLOCK == nError)
-#elif defined(__linux__)
-		HPR_INT32 nError = errno;
+#else
+		int32_t nError = errno;
 		if (EAGAIN == nError)
 #endif
 		{
@@ -192,7 +192,7 @@ HPR_INT32 CTCPSessionAsync::SendMsgAsync( const char* szBuf, HPR_INT32 nBufSize 
 	}
 	else if (nRet != nBufSize)
 	{
-		HPR_INT32 nRest = nBufSize - nRet; 
+		int32_t nRest = nBufSize - nRet;
 		CBufferLoop* pBufferLoop = new CBufferLoop();
 		pBufferLoop->create_buffer(nRest);
 		pBufferLoop->append_buffer(szBuf + nRet, nRest);
@@ -212,29 +212,27 @@ HPR_INT32 CTCPSessionAsync::SendMsgAsync( const char* szBuf, HPR_INT32 nBufSize 
 */
 void CTCPSessionAsync::Stop()
 {
-	if (GetSocket() != HPR_INVALID_SOCKET)
+	if (GetSocket() != S_INVALID_SOCKET)
 	{
 		m_pio->Remove_Handler(this);
-		HPR_INT32 nStart = HPR_GetTimeTick();
-		HPR_CloseSocket(GetSocket());
-		HPR_INT32 nStop = HPR_GetTimeTick();
-		SOCKET_IO_DEBUG("close socket, sock id %d, real sock: %d, time: %d.", m_sock_id, m_socket, nStop - nStart);
+		S_CloseSocket(GetSocket());
+		SOCKET_IO_DEBUG("close socket, sock id %d, real sock: %d.", m_sock_id, m_socket);
 		DoClose(GetSocketID());
-		m_socket = HPR_INVALID_SOCKET;
+		m_socket = S_INVALID_SOCKET;
 	}
 }
 
-/**	@fn	HPR_BOOL CTCPSessionAsync::CheckWrite()
+/**	@fn	BOOL CTCPSessionAsync::CheckWrite()
 *	@brief 判断SOCKET是否需要设置可写
 *	@return	
 */
-HPR_BOOL CTCPSessionAsync::CheckWrite()
+BOOL CTCPSessionAsync::CheckWrite()
 {
 	if (GetSendQueueSize() != 0)
 	{
-		return HPR_TRUE;
+		return TRUE;
 	}
-	return HPR_FALSE;
+	return FALSE;
 }
 
 

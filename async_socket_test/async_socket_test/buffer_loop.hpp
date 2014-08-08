@@ -1,5 +1,5 @@
-/**	@file BufferLoop.h
- *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
+/**	@file buffer_Loop.hpp
+ *	@note 
  *	@brief 环形存储块的类
  *
  *	@author		shiwei
@@ -10,7 +10,10 @@
  *	@note 历史记录：
  *	@note V1.0.0  创建文件
  */
-#pragma once
+#ifndef _BUFFER_LOOP_HPP
+#define _BUFFER_LOOP_HPP
+
+
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
@@ -34,9 +37,10 @@ public:
 	bool create_buffer(int nsize)
 	{
 		destroy_buffer();
-		m_pbuffer = (char*)malloc(nsize);
-		memset(m_pbuffer, 0, nsize);
-		m_nbuffer_size = nsize;
+        int nrealsize = (nsize / 4 + 1) * 4;
+		m_pbuffer = (char*)malloc(nrealsize);
+		memset(m_pbuffer, 0, nrealsize);
+		m_nbuffer_size = nrealsize;
 		m_nused_size = 0;
 		return true;
 	}
@@ -56,8 +60,8 @@ public:
 
 	int get_buffer_size() { return m_nbuffer_size; }
 	int get_used_size() { return m_nused_size; }
-	int get_rest_size() { return get_buffer_size() - get_used_size(); } 
-
+	int get_rest_size() { return get_buffer_size() - get_used_size(); }
+    
 	/**	@fn	char CBufferLoop::get_buffer_tmp(char* pbuffer, int nbuffer_size, int* nreal_buffer_size)
 	*	@brief 获取指定大小的数据，但是不会清空该数据
 	*	@param[in] pbuffer 数据存放指针
@@ -102,7 +106,7 @@ public:
 	bool append_buffer(const char* pbuffer, int nbuffer_size)
 	{
 		bool bret = false;
-		if (get_rest_size()  < nbuffer_size)  //m_ntail_pos == m_nhead_pos
+		if (get_rest_size()  < nbuffer_size)
 		{
 			return bret;
 		}
@@ -169,7 +173,7 @@ public:
 		*nreal_buffer_size = nrealsize;
 		return bret;
 	}
-	
+    
 private:
 	char* m_pbuffer;
 	int m_nbuffer_size;
@@ -178,3 +182,72 @@ private:
 	int m_ntail_pos;			//从0开始
 	int m_nused_size;			//使用的量
 };
+
+class CSimpleBuffer
+{
+public:
+	CSimpleBuffer()
+    {
+        m_pbuffer = NULL;
+        m_nalloc_size = 0;
+        m_nwrite_offset = 0;
+    }
+	~CSimpleBuffer()
+    {
+        m_nalloc_size = 0;
+        m_nwrite_offset = 0;
+        if (m_pbuffer)
+        {
+            free(m_pbuffer);
+            m_pbuffer = NULL;
+        }
+    }
+	char*  GetBuffer() { return m_pbuffer; }
+	int GetAllocSize() { return m_nalloc_size; }
+	int GetWriteOffset() { return m_nwrite_offset; }
+	void IncWriteOffset(int nlen) { m_nwrite_offset += nlen; }
+    
+	void Extend(int nlen)
+    {
+        m_nalloc_size = m_nwrite_offset + nlen;
+        m_nalloc_size += m_nalloc_size >> 2;	// increase by 1/4 allocate size
+        char* new_buf = (char*)realloc(m_pbuffer, m_nalloc_size);
+        m_pbuffer = new_buf;
+    }
+    
+	int Write(const char* pbuf, int nlen)
+    {
+        if (m_nwrite_offset + nlen > m_nalloc_size)
+        {
+            Extend(nlen);
+        }
+        
+        if (pbuf)
+        {
+            memcpy(m_nbuffer + m_nwrite_offset, pbuf, nlen);
+        }
+        
+        m_nwrite_offset += nlen;
+        
+        return nlen;
+    }
+    
+	int Read(char* pbuf, int nlen)
+    {
+        if (nlen > m_nwrite_offset)
+            nlen = m_nwrite_offset;
+        
+        if (pbuf)
+            memcpy(pbuf, m_pbuffer, nlen);
+        
+        m_nwrite_offset -= nlen;
+        memmove(m_pbuffer, m_pbuffer + nlen, m_nwrite_offset);
+        return nlen;
+    }
+private:
+	char* m_pbuffer;
+	int	m_nalloc_size;
+	int	m_nwrite_offset;
+};
+
+#endif

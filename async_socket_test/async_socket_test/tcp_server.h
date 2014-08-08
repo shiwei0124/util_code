@@ -1,5 +1,5 @@
 /**	@file tcp_server.h
- *	@note HangZhou Hikvision System Technology Co., Ltd. All Right Reserved.
+ *	@note 
  *	@brief 主要用于TCP Server端的对象
  *
  *	@author		shiwei
@@ -9,7 +9,9 @@
  *	@note 历史记录：
  *	@note V1.0.0  创建文件
  */
-#pragma once
+#ifndef _TCP_SERVER_H
+#define _TCP_SERVER_H
+
 #include "socket_io.h"
 #include "base_io_stream.h"
 #include "sigslot.h"
@@ -25,11 +27,13 @@ public:
 	void Listen();
 	void Stop();
 
-	/*HPR_UINT32 nsockid, HPR_SOCK_T nSock, const char* szIP, HPR_INT32 nPort*/
-	sigslot::signal4<HPR_UINT32, HPR_SOCK_T, const char*, HPR_INT32 > DoAccept;
+	/*uint32_t nsockid, S_SOCKET nSock, const char* szIP, int32_t nPort*/
+	sigslot::signal4<uint32_t, S_SOCKET, const char*, int32_t > DoAccept;
 
-	/*HPR_UINT32 nsockid*/
-	sigslot::signal1<HPR_UINT32> DoClose;
+	/*uint32_t nsockid*/
+	sigslot::signal1<uint32_t> DoClose;
 	
 private:
 };
+
+#endif

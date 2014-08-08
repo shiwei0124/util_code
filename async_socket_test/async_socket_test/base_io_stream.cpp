@@ -2,38 +2,35 @@
 #include "socket_io_define.h"
 CBaseIOStream::CBaseIOStream(CIOLoop* pio)
 {
-	m_socket = HPR_INVALID_SOCKET;
+	m_socket = S_INVALID_SOCKET;
 	m_sock_id = CSockIDGenerator::GetInstance()->GetSocketID();
-	m_bCheckTcpConnected = HPR_FALSE;
+	m_bCheckTcpConnected = FALSE;
 	m_pio = pio;
 }
 
 CBaseIOStream::~CBaseIOStream(void)
 {
-	if (m_socket != HPR_INVALID_SOCKET)
+	if (m_socket != S_INVALID_SOCKET)
 	{
-		HPR_CloseSocket(m_socket);
+		S_CloseSocket(m_socket);
 	}
 	m_pio = NULL;
 }
 
-/**	@fn	HPR_BOOL CBaseIOStream::Bind(const char* szIP, int nPort)
+/**	@fn	HPR_BOOL CBaseIOStream::Bind(const char* szIP, uint32_t nPort)
 *	@brief 
 *	@param[in] szIP 
 *	@param[in] nPort 
 *	@return	
 */
-HPR_BOOL CBaseIOStream::Bind( const char* szIP, int nPort )
+BOOL CBaseIOStream::Bind( const char* szIP, uint32_t nPort ) const
 {
-	HPR_ADDR_T addr;
-	memset(&addr, 0, sizeof(HPR_ADDR_T));
-	HPR_MakeAddrByString(AF_INET, szIP, nPort, &addr);
-	if (HPR_Bind(m_socket, &addr) == 0)
+	if (S_Bind(m_socket, szIP, nPort) == 0)
 	{
-		return HPR_TRUE;
+		return TRUE;
 	}
 	else
 	{
-		return HPR_FALSE;
+		return FALSE;
 	}
 }

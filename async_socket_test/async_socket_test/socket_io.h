@@ -7,7 +7,7 @@
 #else
 #define SOCKET_IO_DECLARE_CLASS __declspec(dllimport)
 #endif
-#elif (defined(__linux__))
+#else
 #define SOCKET_IO_DECLARE_CLASS
 #endif
 
