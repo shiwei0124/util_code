@@ -40,7 +40,7 @@ void CTCPSession::OnRecv()
 	}
 	else if (nRet == 0)		
 	{
-		//¶Ô·½¹Ø±Õsocket
+		// close socket
 		if (m_phandler != NULL)
 		{
 			m_phandler->OnException(GetSocketID(), LIB_DEV_ANALYSIS_ERROR_RECV);
